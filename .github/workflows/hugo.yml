@@ -13,8 +13,8 @@ jobs:
   create-infra:
     runs-on: ubuntu-latest
     outputs:
-      cf_distribution: ${{ steps.terraform_outputs.cf }}
-      s3_name: ${{ steps.terraform_outputs.s3 }}
+      cf: ${{ steps.terraform_outputs.cf }}
+      s3: ${{ steps.terraform_outputs.s3 }}
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
@@ -38,8 +38,8 @@ jobs:
     runs-on: ubuntu-22.04
     needs: create-infra
     env:
-      S3_BUCKET: ${{ needs.create-infra.outputs.s3_name }}
-      CF_DISTRIBUTION: ${{ needs.create-infra.outputs.cf_distribution }}
+      S3_BUCKET: ${{ needs.create-infra.outputs.s3 }}
+      CF_DISTRIBUTION: ${{ needs.create-infra.outputs.cf }}
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
     steps:
