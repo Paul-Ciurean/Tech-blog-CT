@@ -13,8 +13,8 @@ jobs:
   create-infra:
     runs-on: ubuntu-latest
     outputs:
-      cf: ${{ steps.terraform_outputs.cf }}
-      s3: ${{ steps.terraform_outputs.s3 }}
+      cf_distribution: ${{ steps.terraform_outputs.outputs.cf }}
+      s3_name: ${{ steps.terraform_outputs.outputs.s3 }}
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
@@ -34,6 +34,11 @@ jobs:
           echo "cf=$(terraform output CF_Distribution | tr -d '""')" >> $GITHUB_ENV
           echo "s3=$(terraform output S3_Name | tr -d '""')" >> $GITHUB_ENV
 
+        outputs:
+          cf: ${{ steps.terraform_outputs.outputs.cf }}
+          s3: ${{ steps.terraform_outputs.outputs.s3 }}
+
+
   deploy-hugo:
     runs-on: ubuntu-22.04
     needs: create-infra
@@ -43,7 +48,6 @@ jobs:
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
     steps:
-      
       - uses: actions/checkout@v4
         with:
           submodules: true 
