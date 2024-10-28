@@ -1,0 +1,81 @@
+name: Build a Website using Hugo
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  create-infra:
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.1.7"
+
+      - name: Initialize
+        run: terraform init
+
+      - name: Validate
+        run: terraform validate
+
+      - name: Apply
+        run: terraform apply -auto-approve
+
+      - name: Get Terraform Outputs
+        id: terraform_outputs
+        run: |
+          echo "::set-output name=CF_Distribution::$(terraform output -raw CF_Distribution)"
+          echo "::set-output name=S3_Name::$(terraform output -raw S3_Name)"
+
+        outputs:
+          cf_distribution: ${{ steps.terraform_outputs.CF_Distribution }}
+          s3_name: ${{ steps.terraform_outputs.S3_Name }}
+
+  deploy-hugo:
+    runs-on: ubuntu-22.04
+    needs: create-infra
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+    steps:
+      
+      - uses: actions/checkout@v4
+        with:
+          submodules: true 
+          fetch-depth: 0    
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v3
+        with:
+          hugo-version: '0.135.0'
+          extended: true
+
+      - name: Build
+        run: hugo --minify
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tech-blog
+          path: public/**
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          audience: sts.amazonaws.com
+          role-to-assume: ${{ secrets.ROLE }}
+          aws-region: ${{ secrets.REGION }}
+      
+      - name: Deploy to S3
+        run: |
+          aws s3 sync ./public/ s3://${{ needs.create-infra.outputs.s3_name }} --delete
+      
+      - name: Create CF Invalidation
+        run: | 
+          aws cloudfront create-invalidation \
+          --distribution-id ${{ needs.create-infra.outputs.cf_distribution }} \
+          --paths "/*"

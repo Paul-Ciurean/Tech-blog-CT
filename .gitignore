@@ -1,0 +1,36 @@
+# Hugo generated content
+/public/
+/resources/_gen/
+
+# Hugo statistics file
+hugo_stats.json
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# Editor directories and files
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Temporary files
+*.tmp
+*.log
+*.swp
+*.swo
+
+# Build directories
+/build/
+/dist/
+
+# Other
+*.bak
+*.old
+
+
+# Terraform
+.terraform
+.terraform.lock.hcl
