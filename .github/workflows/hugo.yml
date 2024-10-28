@@ -37,6 +37,9 @@ jobs:
   deploy-hugo:
     runs-on: ubuntu-22.04
     needs: create-infra
+    env:
+      S3_BUCKET: ${{ needs.create-infra.outputs.s3_name }}
+      CF_DISTRIBUTION: ${{ needs.create-infra.outputs.cf_distribution }}
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
     steps:
@@ -70,10 +73,10 @@ jobs:
       
       - name: Deploy to S3
         run: |
-          aws s3 sync ./public/ s3://${{ needs.create-infra.outputs.s3_name }} --delete
+          aws s3 sync ./public/ s3://${{ env.S3_BUCKET }} --delete
       
       - name: Create CF Invalidation
         run: | 
           aws cloudfront create-invalidation \
-          --distribution-id ${{ needs.create-infra.outputs.cf_distribution }} \
+          --distribution-id ${{ env.CF_DISTRIBUTION }} \
           --paths "/*"
