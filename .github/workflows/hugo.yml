@@ -11,6 +11,7 @@ permissions:
 
 jobs:
   create-infra:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
@@ -29,8 +30,8 @@ jobs:
       - name: Get Terraform Outputs
         id: terraform_outputs
         run: |
-          echo "::set-output name=CF_Distribution::$(terraform output -raw CF_Distribution)"
-          echo "::set-output name=S3_Name::$(terraform output -raw S3_Name)"
+          echo "::set-output name=CF_Distribution::$(terraform output -raw CF_Distribution)" >> $GITHUB_ENV
+          echo "::set-output name=S3_Name::$(terraform output -raw S3_Name)" >> $GITHUB_ENV
 
         outputs:
           cf_distribution: ${{ steps.terraform_outputs.CF_Distribution }}
