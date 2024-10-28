@@ -13,8 +13,9 @@ jobs:
   create-infra:
     runs-on: ubuntu-latest
     outputs:
-      cf_distribution: ${{ steps.terraform_outputs.outputs.cf }}
-      s3_name: ${{ steps.terraform_outputs.outputs.s3 }}
+      cf_distribution: ${{ steps.terraform_outputs.outputs.cf_distribution }}
+      s3_name: ${{ steps.terraform_outputs.outputs.s3_name }}
+
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
@@ -31,8 +32,8 @@ jobs:
       - name: Get Terraform Outputs
         id: terraform_outputs
         run: |
-          echo "cf=$(terraform output CF_Distribution | tr -d '""')" >> $GITHUB_ENV
-          echo "s3=$(terraform output S3_Name | tr -d '""')" >> $GITHUB_ENV
+          echo "cf_distribution=$(terraform output -raw CF_Distribution)" >> $GITHUB_ENV
+          echo "s3_name=$(terraform output -raw S3_Name)" >> $GITHUB_ENV
 
 
   deploy-hugo:
@@ -41,6 +42,7 @@ jobs:
     env:
       S3_BUCKET: ${{ needs.create-infra.outputs.s3_name }}
       CF_DISTRIBUTION: ${{ needs.create-infra.outputs.cf_distribution }}
+
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
     steps:
