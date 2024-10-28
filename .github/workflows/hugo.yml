@@ -34,17 +34,13 @@ jobs:
           echo "cf=$(terraform output CF_Distribution | tr -d '""')" >> $GITHUB_ENV
           echo "s3=$(terraform output S3_Name | tr -d '""')" >> $GITHUB_ENV
 
-        outputs:
-          cf: ${{ steps.terraform_outputs.outputs.cf }}
-          s3: ${{ steps.terraform_outputs.outputs.s3 }}
-
 
   deploy-hugo:
     runs-on: ubuntu-22.04
     needs: create-infra
     env:
-      S3_BUCKET: ${{ needs.create-infra.outputs.s3 }}
-      CF_DISTRIBUTION: ${{ needs.create-infra.outputs.cf }}
+      S3_BUCKET: ${{ needs.create-infra.outputs.s3_name }}
+      CF_DISTRIBUTION: ${{ needs.create-infra.outputs.cf_distribution }}
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
     steps:
