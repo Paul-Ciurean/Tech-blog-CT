@@ -48,49 +48,27 @@ resource "aws_s3_bucket" "tech_blog" {
   }
 }
 
-# Static website config
-
-resource "aws_s3_bucket_website_configuration" "static_website" {
+resource "aws_s3_bucket_policy" "oac_policy" {
   bucket = aws_s3_bucket.tech_blog.id
 
-  index_document {
-    suffix = "index.html"
-  }
-
-  error_document {
-    key = "error.html"
-  }
-}
-
-# Public access config
-
-resource "aws_s3_bucket_public_access_block" "public_access" {
-  bucket = aws_s3_bucket.tech_blog.id
-
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
-}
-
-# Bucket policy config
-
-resource "aws_s3_bucket_policy" "allow_public_access" {
-  bucket = aws_s3_bucket.tech_blog.id
-  policy = data.aws_iam_policy_document.allow_public_access.json
-}
-
-data "aws_iam_policy_document" "allow_public_access" {
-  statement {
-    principals {
-      type        = "AWS"
-      identifiers = ["*"]
-    }
-
-    actions = [ "s3:GetObject" ]
-
-    resources = [ "${aws_s3_bucket.tech_blog.arn}/*" ]
-  }
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "cloudfront.amazonaws.com"
+        }
+        Action = "s3:GetObject"
+        Resource = "${aws_s3_bucket.tech_blog.arn}/*"
+        Condition = {
+          StringEquals = {
+            "AWS:SourceArn" = aws_cloudfront_distribution.s3_distribution.arn
+          }
+        }
+      }
+    ]
+  })
 }
 
 ###############################
