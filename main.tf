@@ -97,11 +97,11 @@ data "aws_iam_policy_document" "allow_public_access" {
 # R53 and Certificate Manager #
 ###############################
 
-resource "aws_route53_zone" "zone_p10" {
+resource "aws_route53_zone" "zone" {
   name = var.domain_name
 }
 
-resource "aws_acm_certificate" "cert_p10" {
+resource "aws_acm_certificate" "cert" {
   domain_name       = var.domain_name
   validation_method = "DNS"
   provider = aws.n-virginia
@@ -113,18 +113,18 @@ resource "aws_acm_certificate" "cert_p10" {
 
 resource "aws_route53_record" "cert_validation" {
   for_each = {
-    for dvo in aws_acm_certificate.cert_p10.domain_validation_options : dvo.domain_name => dvo
+    for dvo in aws_acm_certificate.cert.domain_validation_options : dvo.domain_name => dvo
   }
 
-  zone_id = aws_route53_zone.zone_p10.zone_id
+  zone_id = aws_route53_zone.zone.zone_id
   name    = each.value.resource_record_name
   type    = each.value.resource_record_type
   ttl     = 60
   records = [each.value.resource_record_value]
 }
 
-resource "aws_acm_certificate_validation" "cert_validation_p10" {
-  certificate_arn = aws_acm_certificate.cert_p10.arn
+resource "aws_acm_certificate_validation" "cert_validation" {
+  certificate_arn = aws_acm_certificate.cert.arn
   provider = aws.n-virginia
 
   validation_record_fqdns = [
@@ -187,15 +187,15 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   }
 
   viewer_certificate {
-    acm_certificate_arn = aws_acm_certificate.cert_p10.arn
+    acm_certificate_arn = aws_acm_certificate.cert.arn
     ssl_support_method  = "sni-only"
   }
 
-  depends_on = [aws_acm_certificate_validation.cert_validation_p10]
+  depends_on = [aws_acm_certificate_validation.cert_validation]
 }
 
 resource "aws_route53_record" "records_for_cf" {
-  zone_id = aws_route53_zone.zone_p10.zone_id
+  zone_id = aws_route53_zone.zone.zone_id
   name    = var.domain_name
   type    = "A"
 
@@ -209,7 +209,7 @@ resource "aws_route53_record" "records_for_cf" {
 }
 
 resource "aws_route53_record" "records_for_cf_www" {
-  zone_id = aws_route53_zone.zone_p10.zone_id
+  zone_id = aws_route53_zone.zone.zone_id
   name    = "www.${var.domain_name}"
   type    = "A"
 
