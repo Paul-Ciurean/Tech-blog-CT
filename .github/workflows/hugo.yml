@@ -32,8 +32,8 @@ jobs:
       - name: Get Terraform Outputs
         id: terraform_outputs
         run: |
-          echo "cfd=$(terraform output CF_Distribution | tr -d '""')" >> $GITHUB_ENV
-          echo "s3name=$(terraform output S3_Name | tr -d '""')" >> $GITHUB_ENV
+          echo "cfd=$(terraform output CF_Distribution | tr -d '""')" >> "$GITHUB_OUTPUT"
+          echo "s3name=$(terraform output S3_Name | tr -d '""')" >> "$GITHUB_OUTPUT"
 
 
   deploy-hugo:
