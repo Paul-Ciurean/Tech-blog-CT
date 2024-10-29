@@ -3,7 +3,7 @@ baseURL = "https://yourdomain.com"
 defaultContentLanguage = "en"
 # language code
 languageCode = "en"
-title = "Paul's Blog"
+title = "Ciprian's Blog"
 
 # Change the default theme to be use when building the site with Hugo
 theme = "LoveIt"

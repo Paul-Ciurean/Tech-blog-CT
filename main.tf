@@ -154,6 +154,10 @@ output "CF_Distribution" {
   value = aws_cloudfront_distribution.s3_distribution.id
 }
 
+output "CF_Name" {
+  value = aws_cloudfront_distribution.s3_distribution.domain_name
+}
+
 output "S3_Name" {
   value = aws_s3_bucket.tech_blog.id
 }
