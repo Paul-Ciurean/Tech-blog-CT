@@ -150,9 +150,9 @@ resource "aws_cloudfront_origin_access_control" "oac" {
   origin_access_control_origin_type = "s3"
 }
 
-resource "aws_cloudfront_distribution" "CF_Distribution" {
+resource "aws_cloudfront_distribution" "s3_distribution" {
   origin {
-    domain_name              = aws_s3_bucket.website_bucket.bucket_regional_domain_name
+    domain_name              = aws_s3_bucket.tech_blog.bucket_regional_domain_name
     origin_access_control_id = aws_cloudfront_origin_access_control.oac.id
     origin_id                = "myS3Origin"
   }
