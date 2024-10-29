@@ -74,11 +74,7 @@ jobs:
           aws-region: ${{ secrets.REGION }}
       
       - name: Deploy to S3
-        run: |
-          aws s3 sync ./public/ s3://${{ env.S3_BUCKET }} --delete
+        run: aws s3 sync ./public/ s3://${{ env.S3_BUCKET }} --delete
       
       - name: Create CF Invalidation
-        run: | 
-          aws cloudfront create-invalidation \
-          --distribution-id ${{ env.CF_DISTRIBUTION }} \
-          --paths "/*"
+        run: aws cloudfront create-invalidation --distribution-id ${{ env.CF_DISTRIBUTION }} --paths "/*"
