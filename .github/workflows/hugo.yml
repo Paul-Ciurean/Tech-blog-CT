@@ -14,7 +14,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       cf_distribution: ${{ steps.terraform_outputs.outputs.cfd }}
-      cf_name: ${{ steps.terraform_outputs.outputs.cfname }}
       s3_name: ${{ steps.terraform_outputs.outputs.s3name }}
 
     steps:
@@ -34,7 +33,6 @@ jobs:
         id: terraform_outputs
         run: |
           echo "cfd=$(terraform output CF_Distribution | tr -d '""')" >> "$GITHUB_OUTPUT"
-          echo "cfname=$(terraform output CF_Name | tr -d '""')" >> "$GITHUB_OUTPUT"
           echo "s3name=$(terraform output S3_Name | tr -d '""')" >> "$GITHUB_OUTPUT"
 
   deploy-hugo:
@@ -42,7 +40,6 @@ jobs:
     needs: create-infra
     env:
       CF_DISTRIBUTION: ${{ needs.create-infra.outputs.cf_distribution }}
-      CF_NAME: ${{ needs.create-infra.outputs.cf_name }}
       S3_BUCKET: ${{ needs.create-infra.outputs.s3_name }}
 
     concurrency:
@@ -84,7 +81,3 @@ jobs:
           aws cloudfront create-invalidation \
           --distribution-id ${{ env.CF_DISTRIBUTION }} \
           --paths "/*"
-
-      - name: CloudFront Name
-        run: |
-          echo ${{ env.CF_NAME }}
