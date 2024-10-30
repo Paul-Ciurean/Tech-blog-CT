@@ -4,7 +4,7 @@
 
 terraform {
   backend "remote" {
-    hostname = "app.terraform.io"
+    hostname     = "app.terraform.io"
     organization = "Tech-blog"
 
     workspaces {
@@ -30,8 +30,8 @@ provider "aws" {
 
 variable "domain_name" {
   description = "The domain name of my blog"
-  type = string
-  default = "paul-test-projects.co.uk"
+  type        = string
+  default     = "paul-test-projects.co.uk"
 }
 
 ###############################################
@@ -44,7 +44,7 @@ resource "aws_s3_bucket" "tech_blog" {
   bucket = "paul-tech-blog-ct"
 
   tags = {
-    Name        = "My bucket"
+    Name = "My bucket"
   }
 }
 
@@ -59,7 +59,7 @@ resource "aws_s3_bucket_policy" "oac_policy" {
         Principal = {
           Service = "cloudfront.amazonaws.com"
         }
-        Action = "s3:GetObject"
+        Action   = "s3:GetObject"
         Resource = "${aws_s3_bucket.tech_blog.arn}/*"
         Condition = {
           StringEquals = {
@@ -82,7 +82,7 @@ resource "aws_route53_zone" "zone" {
 resource "aws_acm_certificate" "cert" {
   domain_name       = var.domain_name
   validation_method = "DNS"
-  provider = aws.n-virginia
+  provider          = aws.n-virginia
 
   subject_alternative_names = [
     "www.${var.domain_name}"
@@ -103,13 +103,13 @@ resource "aws_route53_record" "cert_validation" {
 
 resource "aws_acm_certificate_validation" "cert_validation" {
   certificate_arn = aws_acm_certificate.cert.arn
-  provider = aws.n-virginia
+  provider        = aws.n-virginia
 
   validation_record_fqdns = [
     for record in aws_route53_record.cert_validation : record.fqdn
   ]
 
-   depends_on = [aws_route53_record.cert_validation]
+  depends_on = [aws_route53_record.cert_validation]
 }
 
 resource "aws_route53_record" "records_for_cf" {
@@ -123,7 +123,7 @@ resource "aws_route53_record" "records_for_cf" {
     evaluate_target_health = true
   }
 
-  depends_on = [ aws_cloudfront_distribution.s3_distribution ]
+  depends_on = [aws_cloudfront_distribution.s3_distribution]
 }
 
 resource "aws_route53_record" "records_for_cf_www" {
@@ -137,7 +137,7 @@ resource "aws_route53_record" "records_for_cf_www" {
     evaluate_target_health = true
   }
 
-  depends_on = [ aws_cloudfront_distribution.s3_distribution ]
+  depends_on = [aws_cloudfront_distribution.s3_distribution]
 }
 
 
@@ -207,11 +207,13 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
 }
 
 resource "aws_lambda_function" "cloudfront_edge_function" {
-  filename         = "index-path.zip"
-  function_name    = "cloudfront-add-index-html"
-  handler          = "index.handler"
-  runtime          = "java21"
-  role             = aws_iam_role.lambda_edge_role.arn
+  filename      = "index-path.zip"
+  function_name = "cloudfront-add-index-html"
+  handler       = "index.handler"
+  runtime       = "nodejs14.x"
+  role          = aws_iam_role.lambda_edge_role.arn
+  publish       = true
+  provider      = aws.n-virginia
 
   source_code_hash = filebase64sha256("index-path.zip")
 }
@@ -223,15 +225,15 @@ resource "aws_iam_role" "lambda_edge_role" {
     Version = "2012-10-17",
     Statement = [
       {
-        Action    = "sts:AssumeRole",
-        Effect    = "Allow",
+        Action = "sts:AssumeRole",
+        Effect = "Allow",
         Principal = {
           Service = "lambda.amazonaws.com"
         },
       },
       {
-        Action    = "sts:AssumeRole",
-        Effect    = "Allow",
+        Action = "sts:AssumeRole",
+        Effect = "Allow",
         Principal = {
           Service = "edgelambda.amazonaws.com"
         },
@@ -247,7 +249,7 @@ resource "aws_iam_role_policy" "lambda_edge_policy" {
     Version = "2012-10-17",
     Statement = [
       {
-        Action   = [
+        Action = [
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
           "logs:PutLogEvents"
