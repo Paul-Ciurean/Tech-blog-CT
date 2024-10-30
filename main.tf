@@ -150,7 +150,7 @@ locals {
 }
 
 resource "aws_cloudfront_origin_access_control" "oac" {
-  name                              = "movies-oac"
+  name                              = "tech-blog-oac"
   signing_behavior                  = "always"
   signing_protocol                  = "sigv4"
   origin_access_control_origin_type = "s3"
@@ -209,13 +209,13 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
 resource "aws_lambda_function" "cloudfront_edge_function" {
   filename      = "index-path.zip"
   function_name = "cloudfront-add-index-html"
-  handler       = "index.handler"
+  handler       = "function.handler"
   runtime       = "nodejs14.x"
   role          = aws_iam_role.lambda_edge_role.arn
   publish       = true
   provider      = aws.n-virginia
 
-  source_code_hash = filebase64sha256("index-path.zip")
+  source_code_hash = filebase64sha256("function.zip")
 }
 
 resource "aws_iam_role" "lambda_edge_role" {
