@@ -112,6 +112,34 @@ resource "aws_acm_certificate_validation" "cert_validation" {
    depends_on = [aws_route53_record.cert_validation]
 }
 
+resource "aws_route53_record" "records_for_cf" {
+  zone_id = aws_route53_zone.zone.zone_id
+  name    = var.domain_name
+  type    = "A"
+
+  alias {
+    name                   = aws_cloudfront_distribution.s3_distribution.domain_name
+    zone_id                = aws_cloudfront_distribution.s3_distribution.hosted_zone_id
+    evaluate_target_health = true
+  }
+
+  depends_on = [ aws_cloudfront_distribution.s3_distribution ]
+}
+
+resource "aws_route53_record" "records_for_cf_www" {
+  zone_id = aws_route53_zone.zone.zone_id
+  name    = "www.${var.domain_name}"
+  type    = "A"
+
+  alias {
+    name                   = aws_cloudfront_distribution.s3_distribution.domain_name
+    zone_id                = aws_cloudfront_distribution.s3_distribution.hosted_zone_id
+    evaluate_target_health = true
+  }
+
+  depends_on = [ aws_cloudfront_distribution.s3_distribution ]
+}
+
 
 ##############
 # CloudFront #
@@ -155,6 +183,12 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
       }
     }
 
+    lambda_function_association {
+      event_type   = "origin-request"
+      lambda_arn   = aws_lambda_function.cloudfront_edge_function.qualified_arn
+      include_body = false
+    }
+
     viewer_protocol_policy = "redirect-to-https"
   }
 
@@ -172,32 +206,57 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   depends_on = [aws_acm_certificate_validation.cert_validation]
 }
 
-resource "aws_route53_record" "records_for_cf" {
-  zone_id = aws_route53_zone.zone.zone_id
-  name    = var.domain_name
-  type    = "A"
+resource "aws_lambda_function" "cloudfront_edge_function" {
+  filename         = "index-path.zip"
+  function_name    = "cloudfront-add-index-html"
+  handler          = "index.handler"
+  runtime          = "java21"
+  role             = aws_iam_role.lambda_edge_role.arn
 
-  alias {
-    name                   = aws_cloudfront_distribution.s3_distribution.domain_name
-    zone_id                = aws_cloudfront_distribution.s3_distribution.hosted_zone_id
-    evaluate_target_health = true
-  }
-
-  depends_on = [ aws_cloudfront_distribution.s3_distribution ]
+  source_code_hash = filebase64sha256("index-path.zip")
 }
 
-resource "aws_route53_record" "records_for_cf_www" {
-  zone_id = aws_route53_zone.zone.zone_id
-  name    = "www.${var.domain_name}"
-  type    = "A"
+resource "aws_iam_role" "lambda_edge_role" {
+  name = "lambda_edge_role"
 
-  alias {
-    name                   = aws_cloudfront_distribution.s3_distribution.domain_name
-    zone_id                = aws_cloudfront_distribution.s3_distribution.hosted_zone_id
-    evaluate_target_health = true
-  }
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action    = "sts:AssumeRole",
+        Effect    = "Allow",
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        },
+      },
+      {
+        Action    = "sts:AssumeRole",
+        Effect    = "Allow",
+        Principal = {
+          Service = "edgelambda.amazonaws.com"
+        },
+      },
+    ],
+  })
+}
 
-  depends_on = [ aws_cloudfront_distribution.s3_distribution ]
+resource "aws_iam_role_policy" "lambda_edge_policy" {
+  name = "lambda_edge_policy"
+  role = aws_iam_role.lambda_edge_role.id
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action   = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ],
+        Effect   = "Allow",
+        Resource = "arn:aws:logs:*:*:*"
+      }
+    ]
+  })
 }
 
 ###########
