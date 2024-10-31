@@ -183,10 +183,9 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
       }
     }
 
-    lambda_function_association {
-      event_type   = "origin-request"
-      lambda_arn   = aws_lambda_function.cloudfront_edge_function.qualified_arn
-      include_body = false
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.index.arn
     }
 
     viewer_protocol_policy = "redirect-to-https"
@@ -206,59 +205,12 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   depends_on = [aws_acm_certificate_validation.cert_validation]
 }
 
-resource "aws_lambda_function" "cloudfront_edge_function" {
-  filename      = "index-path.zip"
-  function_name = "cloudfront-add-index-html"
-  handler       = "function.handler"
-  runtime       = "nodejs14.x"
-  role          = aws_iam_role.lambda_edge_role.arn
-  publish       = true
-  provider      = aws.n-virginia
-
-  source_code_hash = filebase64sha256("function.zip")
-}
-
-resource "aws_iam_role" "lambda_edge_role" {
-  name = "lambda_edge_role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Action = "sts:AssumeRole",
-        Effect = "Allow",
-        Principal = {
-          Service = "lambda.amazonaws.com"
-        },
-      },
-      {
-        Action = "sts:AssumeRole",
-        Effect = "Allow",
-        Principal = {
-          Service = "edgelambda.amazonaws.com"
-        },
-      },
-    ],
-  })
-}
-
-resource "aws_iam_role_policy" "lambda_edge_policy" {
-  name = "lambda_edge_policy"
-  role = aws_iam_role.lambda_edge_role.id
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Action = [
-          "logs:CreateLogGroup",
-          "logs:CreateLogStream",
-          "logs:PutLogEvents"
-        ],
-        Effect   = "Allow",
-        Resource = "arn:aws:logs:*:*:*"
-      }
-    ]
-  })
+resource "aws_cloudfront_function" "index" {
+  name    = "index"
+  runtime = "cloudfront-js-2.0"
+  comment = "Add index.html to the links"
+  publish = true
+  code    = file("${path.module}/function.js")
 }
 
 ###########
