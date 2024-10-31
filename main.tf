@@ -229,4 +229,3 @@ output "CF_Distribution" {
 output "S3_Name" {
   value = aws_s3_bucket.tech_blog.id
 }
-
