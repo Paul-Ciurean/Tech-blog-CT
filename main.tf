@@ -167,6 +167,9 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   is_ipv6_enabled     = true
   comment             = "Managed by Terraform"
   default_root_object = "index.html"
+  custom_error_response {
+    error_code = 404
+  }
 
   aliases = ["www.${var.domain_name}", "${var.domain_name}"]
 
@@ -182,6 +185,8 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
         forward = "none"
       }
     }
+
+  
 
     function_association {
       event_type   = "viewer-request"
